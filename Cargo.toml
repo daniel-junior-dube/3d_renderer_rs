@@ -1,0 +1,13 @@
+[package]
+name = "renderer_3d"
+version = "0.1.0"
+authors = ["djdube <daniel.junior.dube@gmail.com>"]
+
+[dependencies]
+gfx = "0.17.1"
+gfx_window_glutin = "0.26.0"
+glutin = "0.18.0"
+cgmath = "0.16.1"
+gfx_macros = "0.2.1"
+glfw = "0.25.0"
+time = "*"
