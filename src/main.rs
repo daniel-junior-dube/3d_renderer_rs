@@ -178,7 +178,8 @@ fn main() {
 		ps_locals: factory.create_constant_buffer(1),
 		out: main_color,
 		out_depth: main_depth,
-		mvp: Matrix4::from_scale(1.0).into(),
+		projection: Matrix4::from_scale(1.0).into(),
+		model_view: Matrix4::from_scale(1.0).into(),
 		light_sources_info: factory.create_constant_buffer(250), // 250 = NUM_LIGHTS
 	};
 
@@ -193,6 +194,7 @@ fn main() {
 		// ? Update local buffer (num lights)
 		let locals = ForwardPsLocals {
 			num_lights: core.scene.light_sources.len() as i32,
+			eye_position: [core.scene.camera.eye.x, core.scene.camera.eye.y, core.scene.camera.eye.z, 1.0],
 		};
 		encoder.update_buffer(&data.ps_locals, &[locals], 0).unwrap();
 
@@ -213,6 +215,8 @@ fn main() {
 			);
 			data.vbuf = vertex_buffer;
 			data.mvp = (core.scene.camera.vp_matrix() * object.model_matrix()).into();
+			projection
+			model_view
 			encoder.draw(&slice, &pipeline_state, &data);
 		}
 

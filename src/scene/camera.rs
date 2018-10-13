@@ -25,7 +25,7 @@ impl Camera {
 			eye,
 			center,
 			up,
-			view: Matrix4::look_at(eye,center,up),
+			view: Matrix4::look_at(eye, center, up),
 			projection: perspective(Deg(45.0), aspect_ratio, 0.1, 20.0),
 		}
 	}

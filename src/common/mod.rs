@@ -8,6 +8,7 @@ pub type DepthFormat = gfx::format::DepthStencil;
 
 gfx_constant_struct!(ForwardPsLocals {
 	num_lights: i32 = "u_NumLights",
+	eye_position: [f32; 4] = "u_EyePosition",
 });
 
 gfx_constant_struct!(LightSourceInfo {
@@ -29,6 +30,7 @@ gfx_defines!{
 		light_sources_info: gfx::ConstantBuffer<LightSourceInfo> = "b_Lights",
 		out: gfx::BlendTarget<ColorFormat> = ("Target0", gfx::state::ColorMask::all(), gfx::preset::blend::ALPHA),
 		out_depth: gfx::DepthTarget<DepthFormat> = gfx::preset::depth::LESS_EQUAL_WRITE,
-		mvp: gfx::Global<[[f32; 4]; 4]> = "mvp",
+		projection: gfx::Global<[[f32; 4]; 4]> = "projection",
+		model_view: gfx::Global<[[f32; 4]; 4]> = "modelview",
 	}
 }

@@ -2,8 +2,8 @@
 #define MAX_LIGHTS 250
 
 uniform PsLocals {
-	// active number of lights
-	int u_NumLights;
+	int u_NumLights; // active number of lights
+	vec4 u_EyePosition;
 };
 
 struct Light {
@@ -20,8 +20,17 @@ uniform b_Lights {
 varying vec3 f_color;
 
 void main() {
+	//vec4 N = 
+	//vec4 O = 
 	for (int i = 0; i < u_NumLights && i < MAX_LIGHTS; ++i) {
 		Light light = u_Lights[i];
+		//vec4 L = 
+		//float theta = 
+		//float cos_theta = 
+
+		//float alpha = 
+		//float cos_alpha = 
+
 		// Do something with the light..
 		gl_FragColor = vec4(light.diffuse.x, light.diffuse.y, light.diffuse.z, 1.0);
 	}
