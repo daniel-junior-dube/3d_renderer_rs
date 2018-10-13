@@ -4,6 +4,7 @@ extern crate gfx;
 extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate time;
+extern crate tobj;
 
 use cgmath::{Deg, Matrix4, Rad, vec3};
 use gfx::Device;
@@ -46,7 +47,7 @@ impl Core {
 	pub fn new() -> Self {
 		Core {
 			state: CoreState::Waiting,
-			scene: Scene::new(),
+			scene: Scene::new_test_scene(),
 		}
 	}
 
@@ -138,37 +139,14 @@ fn main() {
 
 	let pipeline_state = factory
 		.create_pipeline_simple(
-			include_bytes!("./shaders/triangle_120.glslv"),
-			include_bytes!("./shaders/triangle_120.glslf"),
+			include_bytes!("./shaders/basic_150.glslv"),
+			include_bytes!("./shaders/basic_150.glslf"),
 			pipe::new(),
 		)
 		.unwrap();
 
-	{
-		let mut cube = Object3D::new_cube();
-		cube.translate(0.0, 0.0, -4.0);
-		core.scene.objects.push(cube);
-	}
-	{
-		let mut cube = Object3D::new_cube();
-		cube.translate(0.0, 0.0, -10.0);
-		core.scene.objects.push(cube);
-	}
-	{
-		let mut light = LightSource::new();
-		light.translate(0.0, 10.0, -10.0);
-		light.diffuse[0] = 0.0;
-		core.scene.light_sources.push(light);
-	}
-	{
-		let mut light = LightSource::new();
-		light.translate(0.0, 10.0, -10.0);
-		light.diffuse[1] = 0.0;
-		core.scene.light_sources.push(light);
-	}
-
 	let empty_vertices: Vec<Vertex> = vec![];
-	let empty_indices: Vec<u16> = vec![];
+	let empty_indices: Vec<u32> = vec![];
 	let (empty_buffer, ..) = factory.create_vertex_buffer_with_slice(
 		&empty_vertices.as_slice(), empty_indices.as_slice()
 	);
@@ -178,9 +156,9 @@ fn main() {
 		ps_locals: factory.create_constant_buffer(1),
 		out: main_color,
 		out_depth: main_depth,
-		projection: Matrix4::from_scale(1.0).into(),
-		model_view: Matrix4::from_scale(1.0).into(),
-		light_sources_info: factory.create_constant_buffer(250), // 250 = NUM_LIGHTS
+		mvp: Matrix4::from_scale(1.0).into(),
+		view_model: Matrix4::from_scale(1.0).into(),
+		light_sources_info: factory.create_constant_buffer(250), // 250 = MAX_NUM_LIGHTS
 	};
 
 	while core.state != CoreState::Stopping {
@@ -192,31 +170,33 @@ fn main() {
 		encoder.clear_depth(&data.out_depth, 1.0);
 
 		// ? Update local buffer (num lights)
-		let locals = ForwardPsLocals {
-			num_lights: core.scene.light_sources.len() as i32,
+		let locals = ForwardLocals {
 			eye_position: [core.scene.camera.eye.x, core.scene.camera.eye.y, core.scene.camera.eye.z, 1.0],
+			num_lights: core.scene.light_sources.len() as i32,
 		};
 		encoder.update_buffer(&data.ps_locals, &[locals], 0).unwrap();
 
 		// ? Update light data buffer
-		let light_params: Vec<_> = core.scene.light_sources.iter().map(|light| LightSourceInfo {
+		let light_params: Vec<_> = core.scene.light_sources.iter().map(
+			|light| LightSourceInfo {
 				pos: [light.translation.x, light.translation.y, light.translation.z, 1.0],
 				ambiant: light.ambiant,
 				diffuse: light.diffuse,
 				specular: light.specular,
-		}).collect();
+			}
+		).collect();
 		encoder.update_buffer(&data.light_sources_info, &light_params, 0).unwrap();
 
 		// ? Draw object
 		for object in &core.scene.objects {
+			let view_model_matrix = core.scene.camera.view * object.model_matrix();
 			let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(
 				&object.vertices.as_slice(),
 				object.indices.as_slice()
 			);
 			data.vbuf = vertex_buffer;
-			data.mvp = (core.scene.camera.vp_matrix() * object.model_matrix()).into();
-			projection
-			model_view
+			data.mvp = (core.scene.camera.projection * view_model_matrix).into();
+			data.view_model = view_model_matrix.into();
 			encoder.draw(&slice, &pipeline_state, &data);
 		}
 
