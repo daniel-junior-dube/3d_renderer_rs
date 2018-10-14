@@ -20,46 +20,72 @@ pub struct Object3D {
 	pub name: String,
 	pub vertices: Vec<Vertex>,
 	pub indices: Vec<u32>,
+	pub uvs: Vec<[f32; 2]>,
+	pub normals: Vec<[f32; 4]>,
+	pub material_id: Option<usize>,
 	pub translation: Vector3<f32>,
 	pub rotation: Matrix4<f32>,
 	pub scale: f32,
 }
 impl Object3D {
-	pub fn new(name: String, vertices: Vec<Vertex>, indices: Vec<u32>) -> Self {
+	pub fn new(name: String, vertices: Vec<Vertex>, indices: Vec<u32>, uvs: Vec<[f32; 2]>, normals: Vec<[f32; 4]>, material_id: Option<usize>) -> Self {
 		Object3D {
 			name,
 			vertices,
 			indices,
+			uvs,
+			normals,
+			material_id,
 			translation: vec3(0.0, 0.0, 0.0),
 			rotation: Matrix4::from_axis_angle(vec3(1.0, 0.0, 0.0), Deg(0.0)),
 			scale: 1.0,
 		}
 	}
 
-	pub fn from_obj(path: &Path) -> Vec<Self> {
-		let tobj_data = tobj::load_obj(&path);
-		let (models, _materials) = tobj_data.unwrap();
-
-		let mut objects = vec![];
-		for (i, model) in models.iter().enumerate() {
-			let mesh = &model.mesh;
-
-			let name = model.name.clone();
-			let indices = mesh.indices.clone();
-			let mut vertices = vec![];
-			for vertex_index in 0..mesh.positions.len() / 3 {
-				let first_coord_index = 3 * vertex_index;
-				let x = mesh.positions[first_coord_index];
-				let y = mesh.positions[first_coord_index + 1];
-				let z = mesh.positions[first_coord_index + 2];
-				vertices.push(
-					Vertex::new_default([x, y, z])
+	pub fn from_tobj_model(model: &tobj::Model) -> Self {
+		let mesh = &model.mesh;
+		let name = model.name.clone();
+		let material_id = mesh.material_id;
+		let indices = mesh.indices.clone();
+		let mut vertices = vec![];
+		for vertex_index in 0..mesh.positions.len() / 3 {
+			let first_coord_index = 3 * vertex_index;
+			let x = mesh.positions[first_coord_index];
+			let y = mesh.positions[first_coord_index + 1];
+			let z = mesh.positions[first_coord_index + 2];
+			vertices.push(
+				Vertex::new_default([x, y, z])
+			);
+		}
+		let mut uvs = vec![];
+		let mut normals = vec![];
+		for i in indices.iter() {
+			let normal_index = (i * 3) as usize;
+			if normal_index < mesh.normals.len() {
+				normals.push(
+					[
+						mesh.normals[normal_index],
+						mesh.normals[normal_index + 1],
+						mesh.normals[normal_index + 2],
+						1.0
+					]
 				);
 			}
-
-			objects.push(Object3D::new(name, vertices, indices));
+			let texture_index = (i * 2) as usize;
+			if texture_index < mesh.texcoords.len() {
+				uvs.push(
+					[
+						mesh.texcoords[texture_index],
+						mesh.texcoords[texture_index + 1]
+					]
+				);
+			}
 		}
-		objects
+		Object3D::new(name, vertices, indices, uvs, normals, material_id)
+	}
+
+	pub fn from_tobj_models(models: &Vec<tobj::Model>) -> Vec<Self> {
+		models.iter().map(|model| Object3D::from_tobj_model(model)).collect()
 	}
 
 	pub fn new_cube() -> Self {
@@ -96,7 +122,7 @@ impl Object3D {
 			6, 7, 3
 		];
 		Object3D::evaluate_vertex_normals(&mut vertices, &indices);
-		Object3D::new(String::from("cube"), vertices, indices)
+		Object3D::new(String::from("cube"), vertices, indices, vec![], vec![], None)
 	}
 
 	pub fn model_matrix(&self) -> Matrix4<f32> {
