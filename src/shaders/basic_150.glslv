@@ -5,20 +5,23 @@ uniform Locals {
 	int u_NumLights; // active number of lights
 };
 
-attribute vec3 v_pos;
-attribute vec3 v_color;
-attribute vec3 v_normal;
+attribute vec4 v_pos;
+attribute vec4 v_color;
+attribute vec4 v_normal;
+attribute vec3 v_uv;
 
 uniform mat4 u_MVP;
 uniform mat4 u_ViewModel;
 
-varying vec3 f_color;
+varying vec4 f_VertexPos;
+varying vec4 f_Color;
+varying vec4 f_Normal;
+varying vec3 f_UV;
 
 void main() {
-	gl_Position = u_MVP * vec4(v_pos, 1.0);
-	if ((u_ViewModel * vec4(v_pos, 1.0)).y > u_EyePosition.y) {
-		f_color = vec3(0, 1, 1);
-	} else {
-		f_color = v_color;
-	}
+	gl_Position = u_MVP * v_pos;
+	f_VertexPos = gl_Position;
+	f_Color = v_color;
+	f_Normal = v_normal;
+	f_UV = v_uv;
 }

@@ -46,7 +46,7 @@ impl Scene {
 		let mut scene = Scene::new(
 			[0.0, 0.0, 0.0, 1.0],
 			vec![],
-			Camera::new(Point3::new(0.0, 2.0, 0.0), Point3::new(0.0, 0.0, -4.0), vec3(0.0, 1.0, 0.0), 16.0 / 9.0),
+			Camera::new(Point3::new(0.0, 2.0, 0.0), Point3::new(0.0, 0.0, -10.0), vec3(0.0, 1.0, 0.0), 16.0 / 9.0),
 			vec![],
 			vec![],
 		);
@@ -58,8 +58,7 @@ impl Scene {
 		}
 		{
 			let mut light = LightSource::new();
-			light.translate(0.0, 10.0, -10.0);
-			light.diffuse[0] = 0.0;
+			light.translate(0.0, 0.5, 0.0);
 			scene.light_sources.push(light);
 		}
 		{

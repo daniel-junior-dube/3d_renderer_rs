@@ -21,14 +21,16 @@ gfx_vertex_struct!( Vertex {
     pos: [f32; 4] = "v_pos",
 	color: [f32; 4] = "v_color",
 	normal: [f32; 4] = "v_normal",
+	uv: [f32; 3] = "v_uv",
 });
 
 impl Vertex {
-    pub fn new(pos: [f32; 3], color: [f32; 3], normal: [f32; 3]) -> Vertex {
+    pub fn new(pos: [f32; 3], color: [f32; 3], normal: [f32; 3], uv: [f32; 2]) -> Vertex {
         Vertex {
 			pos: [pos[0], pos[1], pos[2], 1.0],
 			color: [color[0], color[1], color[2], 1.0],
-			normal: [normal[0], normal[1], normal[2], 1.0]
+			normal: [normal[0], normal[1], normal[2], 1.0],
+			uv: [uv[0], uv[1], 1.0],
 		}
     }
 
@@ -36,7 +38,8 @@ impl Vertex {
 		Vertex::new(
 			pos,
 			[1.0; 3],
-			[0.0; 3]
+			[0.0; 3],
+			[0.0; 2]
 		)
     }
 }

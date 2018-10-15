@@ -19,22 +19,31 @@ use scene::entity::Entity3D;
 pub struct Object3D {
 	pub name: String,
 	pub vertices: Vec<Vertex>,
-	pub indices: Vec<u32>,
-	pub uvs: Vec<[f32; 2]>,
-	pub normals: Vec<[f32; 4]>,
 	pub material_id: Option<usize>,
 	pub translation: Vector3<f32>,
 	pub rotation: Matrix4<f32>,
 	pub scale: f32,
 }
 impl Object3D {
-	pub fn new(name: String, vertices: Vec<Vertex>, indices: Vec<u32>, uvs: Vec<[f32; 2]>, normals: Vec<[f32; 4]>, material_id: Option<usize>) -> Self {
+	pub fn new(name: String, vertices: Vec<[f32; 3]>, indices: Vec<u32>, uvs: Vec<[f32; 2]>, normals: Vec<[f32; 3]>, material_id: Option<usize>) -> Self {
+		let mut object_vertices = vec![];
+		for i in indices {
+			let index = i as usize;
+			let vertex = &vertices[index];
+			let uv = if let Some(uv) = uvs.get(index) {
+				*uv
+			} else {
+				[0.0, 0.0]
+			};
+			let color = [1.0, 1.0, 1.0];
+			let normal = &normals[index];
+			object_vertices.push(
+				Vertex::new(*vertex, color, *normal, uv)
+			);
+		}
 		Object3D {
 			name,
-			vertices,
-			indices,
-			uvs,
-			normals,
+			vertices: object_vertices,
 			material_id,
 			translation: vec3(0.0, 0.0, 0.0),
 			rotation: Matrix4::from_axis_angle(vec3(1.0, 0.0, 0.0), Deg(0.0)),
@@ -53,9 +62,7 @@ impl Object3D {
 			let x = mesh.positions[first_coord_index];
 			let y = mesh.positions[first_coord_index + 1];
 			let z = mesh.positions[first_coord_index + 2];
-			vertices.push(
-				Vertex::new_default([x, y, z])
-			);
+			vertices.push([x, y, z]);
 		}
 		let mut uvs = vec![];
 		let mut normals = vec![];
@@ -67,7 +74,6 @@ impl Object3D {
 						mesh.normals[normal_index],
 						mesh.normals[normal_index + 1],
 						mesh.normals[normal_index + 2],
-						1.0
 					]
 				);
 			}
@@ -91,15 +97,15 @@ impl Object3D {
 	pub fn new_cube() -> Self {
 		let mut vertices = vec![
 			// front
-			Vertex::new_default([ -1.0, -1.0, 1.0 ]),
-			Vertex::new_default([  1.0, -1.0, 1.0 ]),
-			Vertex::new_default([  1.0,  1.0, 1.0 ]),
-			Vertex::new_default([ -1.0,  1.0, 1.0 ]),
+			[ -1.0, -1.0, 1.0 ],
+			[  1.0, -1.0, 1.0 ],
+			[  1.0,  1.0, 1.0 ],
+			[ -1.0,  1.0, 1.0 ],
 			// back
-			Vertex::new_default([ -1.0, -1.0, -1.0 ]),
-			Vertex::new_default([  1.0, -1.0, -1.0 ]),
-			Vertex::new_default([  1.0,  1.0, -1.0 ]),
-			Vertex::new_default([ -1.0,  1.0, -1.0 ])
+			[ -1.0, -1.0, -1.0 ],
+			[  1.0, -1.0, -1.0 ],
+			[  1.0,  1.0, -1.0 ],
+			[ -1.0,  1.0, -1.0 ],
 		];
 		let indices = vec![
 			// front
@@ -121,15 +127,15 @@ impl Object3D {
 			3, 2, 6,
 			6, 7, 3
 		];
-		Object3D::evaluate_vertex_normals(&mut vertices, &indices);
-		Object3D::new(String::from("cube"), vertices, indices, vec![], vec![], None)
+		let normals = Object3D::evaluate_vertex_normals(&mut vertices, &indices);
+		Object3D::new(String::from("cube"), vertices, indices, vec![], normals, None)
 	}
 
 	pub fn model_matrix(&self) -> Matrix4<f32> {
 		Matrix4::from_translation(self.translation) * self.rotation * Matrix4::from_scale(self.scale)
 	}
 
-	fn evaluate_vertex_normals(vertices: &mut Vec<Vertex>, indices: &Vec<u32>) {
+	fn evaluate_vertex_normals(vertices: &mut Vec<[f32; 3]>, indices: &Vec<u32>) -> Vec<[f32; 3]> {
 		// ? Init vec to temporarly store normals at vertices positions
 		let mut normals:Vec<Vector3<f32>> = vertices.into_iter().map(|_vertex| vec3(0.0, 0.0, 0.0)).collect();
 
@@ -143,49 +149,20 @@ impl Object3D {
 			let v1 = vertices[index_v1];
 			let v2 = vertices[index_v2];
 			let normal = Object3D::normal(
-				&vec3(v1.pos[0], v1.pos[1], v1.pos[2]),
-				&vec3(v2.pos[0], v2.pos[1], v2.pos[2])
+				&vec3(v1[0], v1[1], v1[2]),
+				&vec3(v2[0], v2[1], v2[2])
 			);
-			/* if i+1 < nb_tris {
-				// TODO: check if chunk of 6 indices is a quad
-				{
-					// ? Get shared indices
-					let mut check = vec![];
-					let mut nb_duplicates = indices[real_index..real_index+3].into_iter().fold(0, |acc, elem| {
-						if check.contains(elem) {
-							acc + 1
-						} else {
-							check.push(*elem);
-							acc
-						}
-					});
-
-					// ? Found 2 shared indices
-					if nb_duplicates == 2 {
-
-					}
-				}
-				let index_v4 = indices[real_index + 3] as usize;
-				let index_v5 = indices[real_index + 4] as usize;
-				let index_v6 = indices[real_index + 5] as usize;
-
-			} else {
-				normals[index_v1] += normal;
-				normals[index_v2] += normal;
-				normals[index_v3] += normal;
-			}*/
 			normals[index_v1] += normal;
 			normals[index_v2] += normal;
 			normals[index_v3] += normal;
 		}
 
 		// ? Assign and normalize each normal for the corresponding vertices
-		for (i, Vertex {normal, ..}) in vertices.into_iter().enumerate() {
-			let normalized_normal = normals[i].normalize();
-			normal[0] = normalized_normal.x;
-			normal[1] = normalized_normal.y;
-			normal[2] = normalized_normal.z;
-		}
+		let normals: Vec<[f32; 3]> = normals.iter().map(|normal| {
+			let normalized_normal = normal.normalize();
+			[normalized_normal.x, normalized_normal.y, normalized_normal.z]
+		}).collect();
+		normals
 	}
 
 	fn normal(v1: &Vector3<f32>, v2: &Vector3<f32>) -> Vector3<f32> {

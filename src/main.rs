@@ -190,10 +190,20 @@ fn main() {
 		// ? Draw object
 		for object in &core.scene.objects {
 			let view_model_matrix = core.scene.camera.view * object.model_matrix();
-			let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(
+			/* let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(
 				&object.vertices.as_slice(),
 				object.indices.as_slice()
+			); */
+			let vertex_buffer = factory.create_vertex_buffer(
+				&object.vertices.as_slice()
 			);
+			let slice = gfx::Slice {
+				start: 0,
+				end: vertex_buffer.len() as u32,
+				base_vertex: 0,
+				instances: None,
+				buffer: gfx::IndexBuffer::Auto
+			};
 			data.vbuf = vertex_buffer;
 			data.mvp = (core.scene.camera.projection * view_model_matrix).into();
 			data.view_model = view_model_matrix.into();
