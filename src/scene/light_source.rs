@@ -16,24 +16,30 @@ use scene::entity::Entity3D;
 
 // ? WIP
 pub struct LightSource {
-	pub ambiant: [f32; 4],
-	pub diffuse: [f32; 4],
-	pub specular: [f32; 4],
+	pub color: [f32; 3],
 	pub translation: Vector3<f32>,
 	pub rotation: Matrix4<f32>,
 	pub scale: f32,
 }
 
 impl LightSource {
-	pub fn new() -> Self {
+	pub fn new(color: [f32; 3], translation: Vector3<f32>, rotation: Matrix4<f32>, scale: f32) -> Self {
 		LightSource {
-			ambiant: [1.0, 1.0, 1.0, 1.0],
-			diffuse: [1.0, 1.0, 1.0, 1.0],
-			specular: [1.0, 1.0, 1.0, 1.0],
-			translation: vec3(0.0, 0.0, 0.0),
-			rotation: Matrix4::from_axis_angle(vec3(1.0, 0.0, 0.0), Deg(0.0)),
-			scale: 1.0,
+			color,
+			translation,
+			rotation,
+			scale,
 		}
+	}
+
+	pub fn new_translated(translation: Vector3<f32>) -> Self {
+		LightSource::new(
+			[1.0, 1.0, 1.0],
+			translation,
+			Matrix4::from_axis_angle(vec3(1.0, 0.0, 0.0),
+			Deg(0.0)),
+			1.0
+		)
 	}
 
 	pub fn model_matrix(&self) -> Matrix4<f32> {

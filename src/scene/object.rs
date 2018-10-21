@@ -27,16 +27,16 @@ pub struct Object3D {
 impl Object3D {
 	pub fn new(name: String, vertices: Vec<[f32; 3]>, indices: Vec<u32>, uvs: Vec<[f32; 2]>, normals: Vec<[f32; 3]>, material_id: Option<usize>) -> Self {
 		let mut object_vertices = vec![];
-		for i in indices {
-			let index = i as usize;
+		for (n, index) in indices.into_iter().enumerate() {
+			let index = index as usize;
 			let vertex = &vertices[index];
-			let uv = if let Some(uv) = uvs.get(index) {
-				*uv
+			let uv = if let Some(uv) = uvs.get(n) {
+				[uv[0], 1.0 - uv[1]]
 			} else {
 				[0.0, 0.0]
 			};
 			let color = [1.0, 1.0, 1.0];
-			let normal = &normals[index];
+			let normal = &normals[n];
 			object_vertices.push(
 				Vertex::new(*vertex, color, *normal, uv)
 			);

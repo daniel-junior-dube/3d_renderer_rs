@@ -1,9 +1,12 @@
 extern crate cgmath;
 #[macro_use]
 extern crate gfx;
+#[macro_use]
+extern crate gfx_macros;
 extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate time;
+extern crate image;
 extern crate tobj;
 
 use cgmath::{Deg, Matrix4, Rad, vec3};
@@ -19,8 +22,6 @@ mod common;
 
 use common::*;
 use scene::Scene;
-use scene::object::Object3D;
-use scene::light_source::LightSource;
 use scene::entity::Entity3D;
 
 /*
@@ -111,6 +112,25 @@ impl Core {
 }
 
 /*
+.##..##..######..######..##.......####..
+.##..##....##......##....##......##.....
+.##..##....##......##....##.......####..
+.##..##....##......##....##..........##.
+..####.....##....######..######...####..
+........................................
+*/
+
+fn load_image_resource_view<F, R>(factory: &mut F, rgba_image: &image::RgbaImage) -> gfx::handle::ShaderResourceView<R, [f32; 4]>
+    where F: gfx::Factory<R>, R: gfx::Resources
+{
+    let (width, height) = rgba_image.dimensions();
+    let kind = gfx::texture::Kind::D2(width as u16, height as u16, gfx::texture::AaMode::Single);
+	let mipmap = gfx::texture::Mipmap::Provided;
+	let (_, view) = factory.create_texture_immutable_u8::<ColorFormat>(kind, mipmap, &[&rgba_image]).unwrap();
+    view
+}
+
+/*
 .##...##...####...######..##..##.
 .###.###..##..##....##....###.##.
 .##.#.##..######....##....##.###.
@@ -151,8 +171,13 @@ fn main() {
 		&empty_vertices.as_slice(), empty_indices.as_slice()
 	);
 
+	let no_texture_rgba_image = image::open("data/NO_TEXTURE.png").unwrap().to_rgba();
+	let texture = load_image_resource_view(&mut factory, &no_texture_rgba_image);
+    let sampler = factory.create_sampler_linear();
+
 	let mut data = pipe::Data {
 		vbuf: empty_buffer,
+		diffuse_texture: (texture, sampler),
 		ps_locals: factory.create_constant_buffer(1),
 		out: main_color,
 		out_depth: main_depth,
@@ -178,12 +203,10 @@ fn main() {
 
 		// ? Update light data buffer
 		let light_params: Vec<_> = core.scene.light_sources.iter().map(
-			|light| LightSourceInfo {
-				pos: [light.translation.x, light.translation.y, light.translation.z, 1.0],
-				ambiant: light.ambiant,
-				diffuse: light.diffuse,
-				specular: light.specular,
-			}
+			|light| LightSourceInfo::new(
+				light.translation.into(),
+				light.color,
+			)
 		).collect();
 		encoder.update_buffer(&data.light_sources_info, &light_params, 0).unwrap();
 
@@ -207,6 +230,13 @@ fn main() {
 			data.vbuf = vertex_buffer;
 			data.mvp = (core.scene.camera.projection * view_model_matrix).into();
 			data.view_model = view_model_matrix.into();
+			if let Some(object_material_id) = object.material_id {
+				if let Some(object_material) = core.scene.materials.get(object_material_id) {
+					if let Some(object_diffure_texture) = core.scene.texture_map.get(&object_material.diffuse_texture) {
+						data.diffuse_texture.0 = load_image_resource_view(&mut factory, object_diffure_texture);
+					}
+				}
+			}
 			encoder.draw(&slice, &pipeline_state, &data);
 		}
 

@@ -10,27 +10,36 @@ gfx_constant_struct!(ForwardLocals {
 	num_lights: i32 = "u_NumLights",
 });
 
-gfx_constant_struct!(LightSourceInfo {
-	pos: [f32; 4] = "pos",
-	ambiant: [f32; 4] = "ambiant",
-	diffuse: [f32; 4] = "diffuse",
-	specular: [f32; 4] = "specular",
-});
+#[derive(ConstantBuffer, Copy, Clone)]
+pub struct LightSourceInfo {
+	pos: [f32; 4],
+	color: [f32; 4],
+}
 
-gfx_vertex_struct!( Vertex {
-    pos: [f32; 4] = "v_pos",
-	color: [f32; 4] = "v_color",
-	normal: [f32; 4] = "v_normal",
-	uv: [f32; 3] = "v_uv",
-});
+impl LightSourceInfo {
+	pub fn new(pos: [f32; 3], color: [f32; 3]) -> Self {
+		LightSourceInfo {
+			pos: [pos[0], pos[1], pos[2], 1.0],
+			color: [color[0], color[1], color[2], 1.0],
+		}
+	}
+}
+
+#[derive(VertexData)]
+pub struct Vertex {
+    v_pos: [f32; 4],
+	v_color: [f32; 3],
+	v_normal: [f32; 4],
+	v_uv: [f32; 2],
+}
 
 impl Vertex {
     pub fn new(pos: [f32; 3], color: [f32; 3], normal: [f32; 3], uv: [f32; 2]) -> Vertex {
         Vertex {
-			pos: [pos[0], pos[1], pos[2], 1.0],
-			color: [color[0], color[1], color[2], 1.0],
-			normal: [normal[0], normal[1], normal[2], 1.0],
-			uv: [uv[0], uv[1], 1.0],
+			v_pos: [pos[0], pos[1], pos[2], 1.0],
+			v_color: color,
+			v_normal: [normal[0], normal[1], normal[2], 1.0],
+			v_uv: uv,
 		}
     }
 
@@ -47,8 +56,9 @@ impl Vertex {
 gfx_defines!{
 	pipeline pipe {
 		vbuf: gfx::VertexBuffer<Vertex> = (),
+		diffuse_texture: gfx::TextureSampler<[f32; 4]> = "u_DiffuseTexture",
 		ps_locals: gfx::ConstantBuffer<ForwardLocals> = "Locals",
-		light_sources_info: gfx::ConstantBuffer<LightSourceInfo> = "b_Lights",
+		light_sources_info: gfx::ConstantBuffer<LightSourceInfo> = "b_lights",
 		out: gfx::BlendTarget<ColorFormat> = ("Target0", gfx::state::ColorMask::all(), gfx::preset::blend::ALPHA),
 		out_depth: gfx::DepthTarget<DepthFormat> = gfx::preset::depth::LESS_EQUAL_WRITE,
 		mvp: gfx::Global<[[f32; 4]; 4]> = "u_MVP",
