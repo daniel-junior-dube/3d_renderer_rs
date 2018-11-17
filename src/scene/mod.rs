@@ -72,31 +72,31 @@ impl Scene {
 		if !material.ambient_texture.is_empty() && !self.texture_map.contains_key(&material.ambient_texture) {
 			self.texture_map.insert(
 				material.ambient_texture.clone(),
-				image::open(&material.ambient_texture).unwrap().to_rgba()
+				image::open(&format!("./data/{}", material.ambient_texture)).unwrap().to_rgba()
 			);
 		}
 		if !material.diffuse_texture.is_empty() && !self.texture_map.contains_key(&material.diffuse_texture) {
 			self.texture_map.insert(
 				material.diffuse_texture.clone(),
-				image::open(&material.diffuse_texture).unwrap().to_rgba()
+				image::open(&format!("./data/{}", material.diffuse_texture)).unwrap().to_rgba()
 			);
 		}
 		if !material.specular_texture.is_empty() && !self.texture_map.contains_key(&material.specular_texture) {
 			self.texture_map.insert(
 				material.specular_texture.clone(),
-				image::open(&material.specular_texture).unwrap().to_rgba()
+				image::open(&format!("./data/{}", material.specular_texture)).unwrap().to_rgba()
 			);
 		}
 		if !material.normal_texture.is_empty() && !self.texture_map.contains_key(&material.normal_texture) {
 			self.texture_map.insert(
 				material.normal_texture.clone(),
-				image::open(&material.normal_texture).unwrap().to_rgba()
+				image::open(&format!("./data/{}", material.normal_texture)).unwrap().to_rgba()
 			);
 		}
 		if !material.dissolve_texture.is_empty() && !self.texture_map.contains_key(&material.dissolve_texture) {
 			self.texture_map.insert(
 				material.dissolve_texture.clone(),
-				image::open(&material.dissolve_texture).unwrap().to_rgba()
+				image::open(&format!("./data/{}", material.dissolve_texture)).unwrap().to_rgba()
 			);
 		}
 	}
